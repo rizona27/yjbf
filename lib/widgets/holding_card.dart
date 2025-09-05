@@ -7,8 +7,19 @@ import '../models/fund_holding.dart';
 
 class HoldingCard extends StatelessWidget {
   final FundHolding holding;
+  final bool showReportActions;
+  final bool showManagementActions;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const HoldingCard({Key? key, required this.holding}) : super(key: key);
+  const HoldingCard({
+    Key? key,
+    required this.holding,
+    this.showReportActions = true,
+    this.showManagementActions = false,
+    this.onEdit,
+    this.onDelete,
+  }) : super(key: key);
 
   String getShortenedFundName(String name) {
     if (name.length > 6) {
@@ -47,7 +58,7 @@ class HoldingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 第一行：基金名称(代码) / 净值(日期)
+            // First row: Fund name (code) / Latest net value (date)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -63,7 +74,7 @@ class HoldingCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '最新净值:${holding.latestNetValue} (${holding.netValueDate})',
+                  '${holding.latestNetValue} (${holding.netValueDate})',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.blue,
@@ -73,7 +84,7 @@ class HoldingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            // 第二行：购买金额 / 购买份额
+            // Second row: Purchase amount / Purchase shares
             Row(
               children: [
                 Text('购买金额:', style: TextStyle(color: Colors.grey[600])),
@@ -90,7 +101,7 @@ class HoldingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            // 第三行：收益 / 收益率
+            // Third row: Profit / Profit rate
             Row(
               children: [
                 Text('收益: ', style: TextStyle(color: Colors.grey[600])),
@@ -113,7 +124,7 @@ class HoldingCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            // 第四行：购买日期 / 持有天数
+            // Fourth row: Purchase date / Days held
             Row(
               children: [
                 Text('购买日期: ', style: TextStyle(color: Colors.grey[600])),
@@ -129,66 +140,87 @@ class HoldingCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            // 第五行：按钮
-            Row(
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final reportContent = '''${holding.fundName} | ${holding.fundCode}
+            // Action buttons row
+            if (showReportActions || showManagementActions) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end, // 所有按钮统一靠右对齐
+                children: [
+                  // 左侧操作按钮
+                  if (showReportActions)
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            final reportContent = '''${holding.fundName} | ${holding.fundCode}
 ├ 购买日期:${holding.formattedPurchaseDate}
 ├ 持有天数:${holding.daysHeld}天
 ├ 购买金额:${purchaseAmount.toStringAsFixed(0)}万
 ├ 最新净值:${holding.latestNetValue} | ${holding.netValueDate}
 ├ 收益:${holding.profit > 0 ? '+' : ''}${formatNumber(holding.profit)}
 └ 收益率:${holding.profitRate > 0 ? '+' : ''}${holding.profitRate.toStringAsFixed(2)}%''';
-                    Clipboard.setData(ClipboardData(text: reportContent));
-                    Fluttertoast.showToast(
-                      msg: "报告已复制到剪贴板",
-                      toastLength: Toast.LENGTH_SHORT,
-                      gravity: ToastGravity.BOTTOM,
-                      backgroundColor: Colors.black54,
-                      textColor: Colors.white,
-                    );
-                  },
-                  icon: const Icon(Icons.description, size: 16),
-                  label: const Text('报告'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                            Clipboard.setData(ClipboardData(text: reportContent));
+                            Fluttertoast.showToast(
+                              msg: "报告已复制到剪贴板",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Colors.black54,
+                              textColor: Colors.white,
+                            );
+                          },
+                          child: const Text('报告'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            minimumSize: Size.zero,
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: holding.clientID));
+                            Fluttertoast.showToast(
+                              msg: "客户号已复制",
+                              toastLength: Toast.LENGTH_SHORT,
+                              gravity: ToastGravity.BOTTOM,
+                              backgroundColor: Colors.black54,
+                              textColor: Colors.white,
+                            );
+                          },
+                          child: const Text('复制客户号'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            minimumSize: Size.zero,
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: holding.clientID));
-                    Fluttertoast.showToast(
-                      msg: "客户号已复制",
-                      toastLength: Toast.LENGTH_SHORT,
-                      gravity: ToastGravity.BOTTOM,
-                      backgroundColor: Colors.black54,
-                      textColor: Colors.white,
-                    );
-                  },
-                  icon: const Icon(Icons.copy, size: 16),
-                  label: const Text('复制客户号'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  // 右侧管理按钮
+                  if (showManagementActions)
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: onEdit,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            child: Icon(Icons.edit, color: Colors.blue, size: 20),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: onDelete,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            child: Icon(Icons.delete, color: Colors.red, size: 20),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

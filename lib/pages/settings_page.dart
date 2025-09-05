@@ -41,7 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: GestureDetector(
               onTap: () => onOptionTapped(index),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
@@ -60,6 +60,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   options[index],
                   style: TextStyle(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 12,
                     color: isSelected ? Colors.black : Colors.grey.shade600,
                   ),
                 ),
@@ -93,6 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.file_download,
                           backgroundColor: Colors.orange.shade50,
                           foregroundColor: Colors.orange,
+                          isCompact: true,
                           onTap: () async {
                             final resultMessage = await dataManager.importData();
                             _showSnackBar(context, resultMessage);
@@ -107,6 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.file_upload,
                           backgroundColor: Colors.orange.shade50,
                           foregroundColor: Colors.orange,
+                          isCompact: true,
                           onTap: () async {
                             final resultMessage = await dataManager.exportData();
                             _showSnackBar(context, resultMessage);
@@ -121,10 +124,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       Expanded(
                         child: CustomCard(
                           title: '管理持仓',
-                          description: '新增、编辑或清空持仓数据',
+                          description: '新增、编辑或清空持仓',
                           icon: Icons.account_balance_wallet,
                           backgroundColor: Colors.purple.shade50,
                           foregroundColor: Colors.purple,
+                          isCompact: true,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (context) => const HoldingsManagementOptionsPage()),
@@ -140,6 +144,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.history,
                           backgroundColor: Colors.blueGrey.shade50,
                           foregroundColor: Colors.blueGrey,
+                          isCompact: true,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (context) => const LogPage()),
@@ -159,6 +164,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.lock,
                           backgroundColor: Colors.lightGreen.shade50,
                           foregroundColor: Colors.lightGreen,
+                          isCompact: true,
                           child: _buildSegmentedControl(
                             ['开启', '关闭'],
                             isPrivacyMode ? 0 : 1,
@@ -179,6 +185,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.color_lens,
                           backgroundColor: Colors.teal.shade50,
                           foregroundColor: Colors.teal,
+                          isCompact: true,
                           child: _buildSegmentedControl(
                             ['浅色', '深色', '系统'],
                             _selectedThemeIndex,
@@ -281,6 +288,140 @@ class GradientText extends StatelessWidget {
         Rect.fromLTWH(0, 0, bounds.width, bounds.height),
       ),
       child: Text(text, style: style),
+    );
+  }
+}
+
+// 更新 CustomCard 小部件以支持阴影和统一高度
+class CustomCard extends StatelessWidget {
+  final String title;
+  final String? description;
+  final IconData? icon;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final VoidCallback? onTap;
+  final Widget? child;
+  final bool isCompact;
+
+  const CustomCard({
+    super.key,
+    required this.title,
+    this.description,
+    this.icon,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    this.onTap,
+    this.child,
+    this.isCompact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: isCompact ? _buildCompactContent() : _buildStandardContent(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStandardContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 36, color: foregroundColor),
+          const SizedBox(height: 8),
+        ],
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: foregroundColor.withOpacity(0.9),
+          ),
+        ),
+        if (description != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            description!,
+            style: TextStyle(
+              fontSize: 12,
+              color: foregroundColor.withOpacity(0.7),
+            ),
+          ),
+        ],
+        if (child != null) ...[
+          const SizedBox(height: 12),
+          child!,
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCompactContent() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 24, color: foregroundColor),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: foregroundColor.withOpacity(0.9),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        if (description != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            description!,
+            style: TextStyle(
+              fontSize: 12,
+              color: foregroundColor.withOpacity(0.7),
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
+          if (child == null)
+            const SizedBox(height: 16), // 添加额外空间以匹配带有子组件的卡片
+        ],
+        if (child != null) ...[
+          const SizedBox(height: 8),
+          child!,
+        ],
+      ],
     );
   }
 }

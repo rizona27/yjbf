@@ -254,8 +254,18 @@ class DataManager extends ChangeNotifier {
       return "导入失败：缺少必要的列 (${missingRequiredHeaders.join(', ')})";
     }
 
-    final existingHoldingsSet = holdings.toSet();
+    // --- 新增：使用所有字段进行严格的重复项校验 ---
+    // 创建一个集合来存储现有记录的唯一哈希值
+    final existingRecordHashes = <String>{};
+    final DateFormat fullDateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+    for (var holding in holdings) {
+      final recordHash = '${holding.clientName},${holding.clientID},${holding.fundCode},${holding.purchaseAmount},'
+          '${holding.purchaseShares},${fullDateFormat.format(holding.purchaseDate)},${holding.remarks}';
+      existingRecordHashes.add(recordHash);
+    }
+
     int importedCount = 0;
+    int duplicateCount = 0;
     final DateFormat dateFormat = DateFormat('yyyy-MM-dd');
 
     for (int i = 1; i < csvData.length; i++) {
@@ -317,31 +327,38 @@ class DataManager extends ChangeNotifier {
         clientName = clientID;
       }
 
-      final newHolding = FundHolding(
-        clientName: clientName,
-        clientID: clientID,
-        fundCode: fundCode,
-        purchaseAmount: purchaseAmount,
-        purchaseShares: purchaseShares,
-        purchaseDate: purchaseDate,
-        remarks: remarks,
-        fundName: '未加载',
-        currentNav: 0.0,
-        navDate: DateTime.now(),
-      );
+      // 生成当前记录的哈希值，包含所有关键字段
+      final newRecordHash = '$clientName,$clientID,$fundCode,$purchaseAmount,'
+          '$purchaseShares,${fullDateFormat.format(purchaseDate)},$remarks';
 
-      if (!existingHoldingsSet.contains(newHolding)) {
+      // 检查哈希值是否已存在，进行重复项判断
+      if (existingRecordHashes.contains(newRecordHash)) {
+        duplicateCount++;
+        fundService.addLog("跳过重复记录: $clientName-$fundCode", type: 'info');
+      } else {
+        final newHolding = FundHolding(
+          clientName: clientName,
+          clientID: clientID,
+          fundCode: fundCode,
+          purchaseAmount: purchaseAmount,
+          purchaseShares: purchaseShares,
+          purchaseDate: purchaseDate,
+          remarks: remarks,
+          fundName: '未加载',
+          currentNav: 0.0,
+          navDate: DateTime.now(),
+        );
+
         holdings.add(newHolding);
+        existingRecordHashes.add(newRecordHash);
         importedCount++;
         fundService.addLog("导入记录: $clientName-$fundCode 金额: $purchaseAmount 份额: $purchaseShares", type: 'info');
-      } else {
-        fundService.addLog("跳过重复记录: $clientName-$fundCode", type: 'info');
       }
     }
     saveData();
-    fundService.addLog("导入完成: 成功导入 $importedCount 条记录", type: 'success');
+    fundService.addLog("导入完成: 成功导入 $importedCount 条记录，跳过 $duplicateCount 条重复记录", type: 'success');
     notifyListeners();
-    return "导入成功：$importedCount 条记录。";
+    return "导入成功：$importedCount 条记录，跳过 $duplicateCount 条重复记录。";
   }
 
   Future<String> exportData() async {

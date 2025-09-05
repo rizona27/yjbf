@@ -1,9 +1,9 @@
-// client_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 import '../services/data_manager.dart';
 import '../models/fund_holding.dart';
@@ -93,8 +93,29 @@ class ExpandableClientCard extends StatefulWidget {
 class _ExpandableClientCardState extends State<ExpandableClientCard> {
   bool _isExpanded = false;
 
+  String _getGroupTitle(String clientKey, List<FundHolding> holdings) {
+    final firstHolding = holdings.first;
+    if (firstHolding.clientName.isNotEmpty) {
+      return '${firstHolding.clientName} (${firstHolding.clientID})';
+    }
+    return '${firstHolding.clientID} (${firstHolding.clientID})';
+  }
+
+  // 调整了饱和度和亮度范围，生成更活泼的颜色
+  Color _generateMorandiColor(String seed) {
+    final random = Random(seed.hashCode);
+    final double hue = random.nextDouble() * 360;
+    final double saturation = random.nextDouble() * 0.3 + 0.4;
+    final double lightness = random.nextDouble() * 0.2 + 0.7;
+
+    return HSLColor.fromAHSL(1.0, hue, saturation, lightness).toColor();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final endColor = isDarkMode ? Colors.black : Colors.white;
+
     return Card(
       elevation: _isExpanded ? 4 : 1,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -114,7 +135,10 @@ class _ExpandableClientCardState extends State<ExpandableClientCard> {
                     ? const BorderRadius.vertical(top: Radius.circular(12))
                     : BorderRadius.circular(12),
                 gradient: LinearGradient(
-                  colors: [Colors.blue.shade50, Colors.blue.shade100],
+                  colors: [
+                    _generateMorandiColor(widget.holdings.first.clientID),
+                    endColor,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -123,11 +147,11 @@ class _ExpandableClientCardState extends State<ExpandableClientCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.clientName,
+                    _getGroupTitle(widget.holdings.first.clientID, widget.holdings),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
+                      color: isDarkMode ? Colors.white : Colors.black,
                     ),
                   ),
                   Icon(
@@ -145,7 +169,11 @@ class _ExpandableClientCardState extends State<ExpandableClientCard> {
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 children: widget.holdings.map((holding) {
-                  return HoldingCard(holding: holding);
+                  return HoldingCard(
+                    holding: holding,
+                    showReportActions: true,
+                    showManagementActions: false,
+                  );
                 }).toList(),
               ),
             ),

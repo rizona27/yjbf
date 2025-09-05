@@ -58,6 +58,7 @@ class HoldingsManagementOptionsPage extends StatelessWidget {
               icon: Icons.add,
               backgroundColor: Colors.green.shade50,
               foregroundColor: Colors.green,
+              isCompact: true,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const AddHoldingPage()),
@@ -71,6 +72,7 @@ class HoldingsManagementOptionsPage extends StatelessWidget {
               icon: Icons.account_balance_wallet,
               backgroundColor: Colors.blue.shade50,
               foregroundColor: Colors.blue,
+              isCompact: true,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const ManageHoldingsPage()),
@@ -84,6 +86,7 @@ class HoldingsManagementOptionsPage extends StatelessWidget {
               icon: Icons.delete_forever,
               backgroundColor: Colors.red.shade50,
               foregroundColor: Colors.red,
+              isCompact: true,
               onTap: showClearConfirmationDialog,
             ),
           ],
