@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
-import 'settings_page.dart';
+import 'package:provider/provider.dart';
+
+import 'pages/settings_page.dart';
+import 'pages/client_page.dart';
+import 'services/data_manager.dart';
+import 'services/fund_service.dart';
+import 'models/fund_holding.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FundService()),
+        ChangeNotifierProxyProvider<FundService, DataManager>(
+          create: (context) => DataManager(fundService: context.read<FundService>()),
+          update: (context, fundService, dataManager) => dataManager!..fundService = fundService,
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -11,7 +28,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '',
+      title: '基金管家',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -46,10 +63,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 完全移除 AppBar，以去除顶部空白
-      body: Center(
-        child: _pages.elementAt(_selectedIndex),
+      appBar: AppBar(
+        title: const Text('基金管家'),
       ),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -78,7 +95,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-// 一览页面
 class OverviewPage extends StatelessWidget {
   const OverviewPage({super.key});
 
@@ -90,19 +106,6 @@ class OverviewPage extends StatelessWidget {
   }
 }
 
-// 客户页面
-class ClientsPage extends StatelessWidget {
-  const ClientsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Text('客户页面', style: TextStyle(fontSize: 24)),
-    );
-  }
-}
-
-// 排名页面
 class RankingPage extends StatelessWidget {
   const RankingPage({super.key});
 

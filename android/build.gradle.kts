@@ -2,6 +2,9 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/jcenter") } // jcenter 虽然已废弃，但为了兼容旧依赖，最好加上
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
     }
 }
 
