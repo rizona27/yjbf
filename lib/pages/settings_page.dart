@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 // 导入服务和数据模型
 import '../services/data_manager.dart';
-import '../models/fund_holding.dart';
-import 'log_page.dart'; // 新增：导入日志页面
-
-// 导入 UI 组件
+// 修正：重新导入 CustomCard
 import '../widgets/custom_card.dart';
-import '../widgets/toast_view.dart';
+import 'log_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -18,22 +16,8 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // 主题模式的当前选择
-  int _selectedThemeIndex = 0; // 0: 浅色, 1: 深色, 2: 系统
+  int _selectedThemeIndex = 0;
 
-  // 辅助函数，用于显示Toast提示
-  void _showToast(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: ToastView(message: message),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  // 显示 SnackBar 的辅助函数
   void _showSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -43,8 +27,54 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _buildSegmentedControl(
+      List<String> options, int selectedIndex, Function(int) onOptionTapped) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(options.length, (index) {
+          final isSelected = index == selectedIndex;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onOptionTapped(index),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: isSelected
+                      ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  options[index],
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.black : Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext
+  context) {
     return Consumer<DataManager>(
       builder: (context, dataManager, child) {
         final bool isPrivacyMode = dataManager.isPrivacyMode;
@@ -105,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: CustomCard(
-                          title: '日志查询', // 新增：日志查询按钮
+                          title: '日志查询',
                           description: 'API请求与响应日志',
                           icon: Icons.history,
                           backgroundColor: Colors.blueGrey.shade50,
@@ -129,14 +159,14 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.lock,
                           backgroundColor: Colors.lightGreen.shade50,
                           foregroundColor: Colors.lightGreen,
-                          onTap: () {
-                            // TODO: 触摸事件逻辑
-                          },
                           child: _buildSegmentedControl(
                             ['开启', '关闭'],
                             isPrivacyMode ? 0 : 1,
                                 (index) {
-                              dataManager.togglePrivacyMode();
+                              if ((index == 0 && !isPrivacyMode) ||
+                                  (index == 1 && isPrivacyMode)) {
+                                dataManager.togglePrivacyMode();
+                              }
                             },
                           ),
                         ),
@@ -149,9 +179,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           icon: Icons.color_lens,
                           backgroundColor: Colors.teal.shade50,
                           foregroundColor: Colors.teal,
-                          onTap: () {
-                            // TODO: 触摸事件逻辑
-                          },
                           child: _buildSegmentedControl(
                             ['浅色', '深色', '系统'],
                             _selectedThemeIndex,
@@ -159,6 +186,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               setState(() {
                                 _selectedThemeIndex = index;
                               });
+                              // TODO: 在这里添加实际切换主题的逻辑
                             },
                           ),
                         ),
@@ -167,7 +195,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 16),
                   CustomCard(
-                    title: '导入 Assets 数据', // 新增：调试用导入按钮
+                    title: '导入 Assets 数据',
                     description: '从assets目录导入CSV文件 (调试模式)',
                     icon: Icons.bug_report,
                     backgroundColor: Colors.red.shade50,
@@ -200,53 +228,9 @@ class _SettingsPageState extends State<SettingsPage> {
       },
     );
   }
-
-  Widget _buildSegmentedControl(
-      List<String> options, int selectedIndex, Function(int) onOptionTapped) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(options.length, (index) {
-          final isSelected = index == selectedIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onOptionTapped(index),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: isSelected
-                      ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  options[index],
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? Colors.black : Colors.grey.shade600,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
 }
 
+// 虚线分割线小部件
 class DashedDivider extends StatelessWidget {
   const DashedDivider({super.key});
 
@@ -276,6 +260,7 @@ class DashedDivider extends StatelessWidget {
   }
 }
 
+// 渐变色文本小部件
 class GradientText extends StatelessWidget {
   final String text;
   final TextStyle? style;

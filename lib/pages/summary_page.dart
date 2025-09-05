@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../services/data_manager.dart';
+// 修正：重新导入 CustomCard
 import '../widgets/custom_card.dart';
+import '../widgets/holding_card.dart';
 
 class SummaryPage extends StatelessWidget {
   const SummaryPage({super.key});
@@ -17,13 +19,19 @@ class SummaryPage extends StatelessWidget {
         final totalClients = dataManager.totalClients;
         final isPrivacyMode = dataManager.isPrivacyMode;
 
-        // 格式化金额，如果处于隐私模式则模糊显示
         String formatAmount(double amount) {
           if (isPrivacyMode) {
             return '******';
           }
           final formatter = NumberFormat('#,##0.00', 'en_US');
           return formatter.format(amount);
+        }
+
+        String formatProfit(double amount) {
+          if (isPrivacyMode) return '******';
+          final formatter = NumberFormat('#,##0.00', 'en_US');
+          final formatted = formatter.format(amount);
+          return amount > 0 ? '+$formatted' : formatted;
         }
 
         return Scaffold(
@@ -54,7 +62,7 @@ class SummaryPage extends StatelessWidget {
                     Expanded(
                       child: _buildInfoCard(
                         title: '总盈利 (元)',
-                        value: formatAmount(totalProfit),
+                        value: formatProfit(totalProfit),
                         color: Colors.green.shade100,
                         icon: Icons.trending_up,
                         iconColor: Colors.green.shade800,
@@ -92,9 +100,6 @@ class SummaryPage extends StatelessWidget {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                // TODO: 饼图/柱状图展示资产分布
-                // 例如：
-                // PieChartWidget(),
               ],
             ),
           ),
@@ -141,7 +146,7 @@ class SummaryPage extends StatelessWidget {
   }) {
     return CustomCard(
       title: title,
-      description: null, // 将值作为子组件传递
+      description: null,
       backgroundColor: color,
       foregroundColor: iconColor,
       child: Column(

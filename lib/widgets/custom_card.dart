@@ -1,3 +1,4 @@
+// custom_card.dart
 import 'package:flutter/material.dart';
 
 class CustomCard extends StatelessWidget {
@@ -14,73 +15,57 @@ class CustomCard extends StatelessWidget {
     required this.title,
     this.description,
     this.icon,
-    this.backgroundColor = Colors.white,
-    this.foregroundColor = Colors.black,
     this.onTap,
     this.child,
+    this.backgroundColor = Colors.white,
+    this.foregroundColor = Colors.black,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 120, // 固定卡片高度
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              // 修复 withOpacity 警告
-              color: Colors.black.withAlpha((255 * 0.08).round()),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // 垂直居中对齐
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (icon != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(icon, color: foregroundColor),
-                  ),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: foregroundColor,
-                    ),
-                  ),
-                ),
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      color: backgroundColor,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: foregroundColor, size: 24),
+                const SizedBox(height: 8),
               ],
-            ),
-            if (description != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: foregroundColor,
+                ),
+              ),
+              if (description != null) ...[
+                const SizedBox(height: 4),
+                Text(
                   description!,
                   style: TextStyle(
                     fontSize: 12,
                     color: foregroundColor.withOpacity(0.7),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            if (child != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10.0),
-                child: child!,
-              ),
-          ],
+              ],
+              if (child != null) ...[
+                const SizedBox(height: 12),
+                child!,
+              ],
+            ],
+          ),
         ),
       ),
     );

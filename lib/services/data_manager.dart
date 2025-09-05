@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
+import 'dart:math';
 
 import '../models/fund_holding.dart';
 import 'fund_service.dart';
@@ -14,10 +16,46 @@ class DataManager extends ChangeNotifier {
 
   List<FundHolding> holdings = [];
 
-  // 移除了 final 关键字，并使用 late 声明，使其可变
   late FundService fundService;
 
   DataManager({required this.fundService});
+
+  // 生成一个唯一的混淆ID，解决隐私模式下姓名冲突问题
+  String getObscuredClientID(String clientID) {
+    if (clientID.isEmpty) {
+      return '';
+    }
+    // 使用简单的哈希函数生成一个唯一的混淆字符串
+    var bytes = utf8.encode(clientID);
+    var hash = 0;
+    for (var i = 0; i < bytes.length; i++) {
+      hash = (hash << 5) - hash + bytes[i];
+      hash = hash & hash; // Ensure it's a 32-bit integer
+    }
+    return hash.toUnsigned(32).toRadixString(16).padLeft(8, '0');
+  }
+
+  String obscuredName(String name) {
+    if (!_isPrivacyMode || name.isEmpty) {
+      return name;
+    }
+    // 获取对应的客户号并返回混淆ID
+    final holding = holdings.firstWhere((h) => h.clientName == name, orElse: () => throw Exception('Holding not found'));
+    return getObscuredClientID(holding.clientID);
+  }
+
+  // 新增：按客户姓名分组持仓数据
+  Map<String, List<FundHolding>> groupHoldingsByClient() {
+    final Map<String, List<FundHolding>> groupedHoldings = {};
+    for (var holding in holdings) {
+      if (groupedHoldings.containsKey(holding.clientName)) {
+        groupedHoldings[holding.clientName]!.add(holding);
+      } else {
+        groupedHoldings[holding.clientName] = [holding];
+      }
+    }
+    return groupedHoldings;
+  }
 
   double get totalAssets {
     return holdings.fold(0.0, (sum, holding) => sum + holding.purchaseAmount);
@@ -38,6 +76,22 @@ class DataManager extends ChangeNotifier {
 
   void saveData() {
     debugPrint('数据已保存');
+  }
+
+  // 新增：刷新所有基金持仓的净值
+  Future<void> refreshHoldings() async {
+    fundService.addLog('开始刷新所有基金持仓...', type: 'info');
+    for (var holding in holdings) {
+      final updatedHolding = await fundService.fetchFundInfo(holding.fundCode);
+      if (updatedHolding.isValid) {
+        holding.fundName = updatedHolding.fundName;
+        holding.currentNav = updatedHolding.currentNav;
+        holding.navDate = updatedHolding.navDate;
+        holding.isValid = updatedHolding.isValid;
+      }
+    }
+    notifyListeners();
+    fundService.addLog('基金持仓刷新完成。', type: 'success');
   }
 
   Future<String> importData() async {
@@ -191,6 +245,9 @@ class DataManager extends ChangeNotifier {
         purchaseShares: purchaseShares,
         purchaseDate: purchaseDate,
         remarks: remarks,
+        fundName: '未加载',
+        currentNav: 0.0,
+        navDate: DateTime.now(),
       );
 
       if (!existingHoldingsSet.contains(newHolding)) {

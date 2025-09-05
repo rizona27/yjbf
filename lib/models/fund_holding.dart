@@ -1,47 +1,83 @@
-import 'package:flutter/material.dart';
-
+// lib/models/fund_holding.dart
 // 基金持仓数据结构
+import 'package:intl/intl.dart';
+
 class FundHolding {
   String clientName;
   String clientID;
   String fundCode;
+  String fundName;
   double purchaseAmount;
   double purchaseShares;
   DateTime purchaseDate;
   String remarks;
+  double currentNav;
+  DateTime navDate;
+  bool isValid;
 
   FundHolding({
     required this.clientName,
     required this.clientID,
     required this.fundCode,
+    required this.fundName,
     required this.purchaseAmount,
     required this.purchaseShares,
     required this.purchaseDate,
     required this.remarks,
+    required this.currentNav,
+    required this.navDate,
+    this.isValid = false,
   });
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-          other is FundHolding &&
-              runtimeType == other.runtimeType &&
-              clientName == other.clientName &&
-              clientID == other.clientID &&
-              fundCode == other.fundCode &&
-              purchaseAmount == other.purchaseAmount &&
-              purchaseShares == other.purchaseShares &&
-              purchaseDate.year == other.purchaseDate.year &&
-              purchaseDate.month == other.purchaseDate.month &&
-              purchaseDate.day == other.purchaseDate.day &&
-              remarks == other.remarks;
+  // 动态计算属性（Getter）
 
-  @override
-  int get hashCode =>
-      clientName.hashCode ^
-      clientID.hashCode ^
-      fundCode.hashCode ^
-      purchaseAmount.hashCode ^
-      purchaseShares.hashCode ^
-      purchaseDate.day.hashCode ^
-      remarks.hashCode;
+  /// 计算总市值
+  double get totalValue {
+    if (currentNav >= 0 && purchaseShares >= 0) {
+      return currentNav * purchaseShares;
+    }
+    return 0.0;
+  }
+
+  /// 计算收益
+  double get profit {
+    return totalValue - purchaseAmount;
+  }
+
+  /// 计算收益率
+  double get profitRate {
+    if (purchaseAmount > 0) {
+      return (profit / purchaseAmount) * 100;
+    }
+    return 0.0;
+  }
+
+  /// 计算持有天数
+  int get daysHeld {
+    final now = DateTime.now();
+    final difference = now.difference(purchaseDate);
+    return difference.inDays;
+  }
+
+  // 格式化输出属性，与客户端代码保持一致
+  String get latestNetValue => currentNav.toStringAsFixed(4);
+  String get netValueDate => DateFormat('MM-dd').format(navDate);
+  String get formattedPurchaseDate => DateFormat('yy-MM-dd').format(purchaseDate);
+
+  // 静态方法：方便创建无效的基金持仓对象
+  static FundHolding invalid({required String fundCode}) {
+    return FundHolding(
+      clientName: "",
+      clientID: "",
+      fundCode: fundCode,
+      fundName: "未加载",
+      purchaseAmount: 0.0,
+      purchaseShares: 0.0,
+      purchaseDate: DateTime.now(),
+      remarks: "",
+      currentNav: 0.0,
+      navDate: DateTime.now(),
+      isValid: false,
+    );
+  }
 }

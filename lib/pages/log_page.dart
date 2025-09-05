@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../services/fund_service.dart';
 
+// The LogPage is now a constant widget
 class LogPage extends StatelessWidget {
   const LogPage({super.key});
 
