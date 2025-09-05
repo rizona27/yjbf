@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
-// 导入服务和数据模型
 import '../services/data_manager.dart';
-// 修正：重新导入 CustomCard
 import '../widgets/custom_card.dart';
 import 'log_page.dart';
+import 'holdings_management_options_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -73,8 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   @override
-  Widget build(BuildContext
-  context) {
+  Widget build(BuildContext context) {
     return Consumer<DataManager>(
       builder: (context, dataManager, child) {
         final bool isPrivacyMode = dataManager.isPrivacyMode;
@@ -128,7 +126,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           backgroundColor: Colors.purple.shade50,
                           foregroundColor: Colors.purple,
                           onTap: () {
-                            // TODO: 实现管理持仓逻辑
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const HoldingsManagementOptionsPage()),
+                            );
                           },
                         ),
                       ),

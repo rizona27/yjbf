@@ -20,7 +20,52 @@ class DataManager extends ChangeNotifier {
 
   DataManager({required this.fundService});
 
-  // 生成一个唯一的混淆ID，解决隐私模式下姓名冲突问题
+  // 基金持仓数据管理方法
+  /// 新增一个持仓
+  void addHolding(FundHolding newHolding) {
+    holdings.add(newHolding);
+    notifyListeners();
+  }
+
+  /// 更新一个持仓
+  void updateHolding(FundHolding updatedHolding) {
+    final index = holdings.indexWhere((h) => h.clientID == updatedHolding.clientID && h.fundCode == updatedHolding.fundCode);
+    if (index != -1) {
+      holdings[index] = updatedHolding;
+      notifyListeners();
+    }
+  }
+
+  /// 删除一个指定的持仓
+  void deleteHolding(String holdingId) {
+    holdings.removeWhere((h) => h.clientID == holdingId);
+    notifyListeners();
+  }
+
+  /// 批量修改客户名
+  void batchRename(String oldName, String newName) {
+    for (var i = 0; i < holdings.length; i++) {
+      if (holdings[i].clientName == oldName) {
+        holdings[i] = holdings[i].copyWith(clientName: newName);
+      }
+    }
+    notifyListeners();
+  }
+
+  /// 批量删除某个客户的所有持仓
+  void batchDelete(String clientName) {
+    holdings.removeWhere((h) => h.clientName == clientName);
+    notifyListeners();
+  }
+
+  /// 清空所有持仓数据
+  void clearAllHoldings() {
+    holdings.clear();
+    notifyListeners();
+  }
+
+  // 隐私模式相关
+  /// 生成一个唯一的混淆ID，解决隐私模式下姓名冲突问题
   String getObscuredClientID(String clientID) {
     if (clientID.isEmpty) {
       return '';
@@ -40,33 +85,12 @@ class DataManager extends ChangeNotifier {
       return name;
     }
     // 获取对应的客户号并返回混淆ID
-    final holding = holdings.firstWhere((h) => h.clientName == name, orElse: () => throw Exception('Holding not found'));
-    return getObscuredClientID(holding.clientID);
-  }
-
-  // 新增：按客户姓名分组持仓数据
-  Map<String, List<FundHolding>> groupHoldingsByClient() {
-    final Map<String, List<FundHolding>> groupedHoldings = {};
-    for (var holding in holdings) {
-      if (groupedHoldings.containsKey(holding.clientName)) {
-        groupedHoldings[holding.clientName]!.add(holding);
-      } else {
-        groupedHoldings[holding.clientName] = [holding];
-      }
+    try {
+      final holding = holdings.firstWhere((h) => h.clientName == name);
+      return getObscuredClientID(holding.clientID);
+    } catch (e) {
+      return name;
     }
-    return groupedHoldings;
-  }
-
-  double get totalAssets {
-    return holdings.fold(0.0, (sum, holding) => sum + holding.purchaseAmount);
-  }
-
-  double get totalProfit {
-    return totalAssets * 0.1;
-  }
-
-  int get totalClients {
-    return holdings.map((h) => h.clientID).toSet().length;
   }
 
   void togglePrivacyMode() {
@@ -74,11 +98,66 @@ class DataManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 数据计算与分组
+  /// 新增：按客户姓名分组持仓数据
+  Map<String, List<FundHolding>> groupHoldingsByClient() {
+    final Map<String, List<FundHolding>> namedGroups = {};
+    final Map<String, List<FundHolding>> unnamedGroups = {};
+
+    for (var holding in holdings) {
+      if (holding.clientName.isNotEmpty) {
+        if (namedGroups.containsKey(holding.clientName)) {
+          namedGroups[holding.clientName]!.add(holding);
+        } else {
+          namedGroups[holding.clientName] = [holding];
+        }
+      } else {
+        if (unnamedGroups.containsKey(holding.clientID)) {
+          unnamedGroups[holding.clientID]!.add(holding);
+        } else {
+          unnamedGroups[holding.clientID] = [holding];
+        }
+      }
+    }
+
+    // 按姓名（拼音）排序
+    final sortedNamedKeys = namedGroups.keys.toList()..sort((a, b) => a.compareTo(b));
+    // 按客户号数字升序排序
+    final sortedUnnamedKeys = unnamedGroups.keys.toList()..sort((a, b) {
+      final aInt = int.tryParse(a) ?? 0;
+      final bInt = int.tryParse(b) ?? 0;
+      return aInt.compareTo(bInt);
+    });
+
+    final Map<String, List<FundHolding>> finalGroupedHoldings = {};
+    for (var key in sortedNamedKeys) {
+      finalGroupedHoldings[key] = namedGroups[key]!;
+    }
+    for (var key in sortedUnnamedKeys) {
+      finalGroupedHoldings[key] = unnamedGroups[key]!;
+    }
+
+    return finalGroupedHoldings;
+  }
+
+  double get totalAssets {
+    return holdings.fold(0.0, (sum, holding) => sum + holding.purchaseAmount);
+  }
+
+  double get totalProfit {
+    return holdings.fold(0.0, (sum, holding) => sum + holding.profit);
+  }
+
+  int get totalClients {
+    return holdings.map((h) => h.clientID).toSet().length;
+  }
+
   void saveData() {
     debugPrint('数据已保存');
   }
 
-  // 新增：刷新所有基金持仓的净值
+  // 基金信息更新
+  /// 新增：刷新所有基金持仓的净值
   Future<void> refreshHoldings() async {
     fundService.addLog('开始刷新所有基金持仓...', type: 'info');
     for (var holding in holdings) {
@@ -94,6 +173,7 @@ class DataManager extends ChangeNotifier {
     fundService.addLog('基金持仓刷新完成。', type: 'success');
   }
 
+  // 文件导入/导出
   Future<String> importData() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(

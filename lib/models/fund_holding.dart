@@ -10,7 +10,7 @@ class FundHolding {
   double purchaseAmount;
   double purchaseShares;
   DateTime purchaseDate;
-  String remarks;
+  String? remarks; // 将 remarks 字段改为可空类型
   double currentNav;
   DateTime navDate;
   bool isValid;
@@ -23,13 +23,14 @@ class FundHolding {
     required this.purchaseAmount,
     required this.purchaseShares,
     required this.purchaseDate,
-    required this.remarks,
+    this.remarks, // 在构造函数中也改为可空
     required this.currentNav,
     required this.navDate,
     this.isValid = false,
   });
 
   // 动态计算属性（Getter）
+  // ... (其余代码保持不变) ...
 
   /// 计算总市值
   double get totalValue {
@@ -74,10 +75,39 @@ class FundHolding {
       purchaseAmount: 0.0,
       purchaseShares: 0.0,
       purchaseDate: DateTime.now(),
-      remarks: "",
+      remarks: null,
       currentNav: 0.0,
       navDate: DateTime.now(),
       isValid: false,
+    );
+  }
+
+  // 新增：实现 copyWith 方法来解决报错
+  FundHolding copyWith({
+    String? clientName,
+    String? clientID,
+    String? fundCode,
+    String? fundName,
+    double? purchaseAmount,
+    double? purchaseShares,
+    DateTime? purchaseDate,
+    String? remarks,
+    double? currentNav,
+    DateTime? navDate,
+    bool? isValid,
+  }) {
+    return FundHolding(
+      clientName: clientName ?? this.clientName,
+      clientID: clientID ?? this.clientID,
+      fundCode: fundCode ?? this.fundCode,
+      fundName: fundName ?? this.fundName,
+      purchaseAmount: purchaseAmount ?? this.purchaseAmount,
+      purchaseShares: purchaseShares ?? this.purchaseShares,
+      purchaseDate: purchaseDate ?? this.purchaseDate,
+      remarks: remarks ?? this.remarks,
+      currentNav: currentNav ?? this.currentNav,
+      navDate: navDate ?? this.navDate,
+      isValid: isValid ?? this.isValid,
     );
   }
 }
