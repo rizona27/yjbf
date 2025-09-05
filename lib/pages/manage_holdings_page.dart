@@ -73,7 +73,6 @@ class _ManageHoldingsPageState extends State<ManageHoldingsPage> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    // 调整渐变结束色，让渐变效果更明显
     final endColor = isDarkMode ? Colors.black : Colors.white;
 
     return Scaffold(
@@ -97,7 +96,6 @@ class _ManageHoldingsPageState extends State<ManageHoldingsPage> {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16.0),
             itemCount: groupedEntries.length,
             itemBuilder: (context, index) {
               final entry = groupedEntries[index];
@@ -105,76 +103,95 @@ class _ManageHoldingsPageState extends State<ManageHoldingsPage> {
               final holdings = entry.value;
               final isExpanded = _isExpanded[clientKey] ?? false;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 4,
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                 child: Column(
                   children: [
-                    InkWell(
+                    GestureDetector(
                       onTap: () {
                         setState(() {
                           _isExpanded[clientKey] = !isExpanded;
                         });
                       },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          gradient: LinearGradient(
-                            colors: [
-                              _generateMorandiColor(clientKey),
-                              endColor,
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                _getGroupTitle(clientKey, holdings),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode ? Colors.white : Colors.black,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              // 调整垂直填充为 4，与 client_page 保持一致
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: LinearGradient(
+                                  colors: [
+                                    _generateMorandiColor(clientKey),
+                                    endColor,
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
                                 ),
-                                overflow: TextOverflow.ellipsis,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      _getGroupTitle(clientKey, holdings),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDarkMode ? Colors.white : Colors.black,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  // 使用 GestureDetector 和 Text 替换 TextButton
+                                  Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () async {
+                                          final newName = await _showRenameDialog(context, holdings.first.clientName);
+                                          if (newName != null && newName.isNotEmpty) {
+                                            dataManager.batchRename(holdings.first.clientName, newName);
+                                            _showSnackBar('客户名批量修改成功');
+                                          }
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                                          child: Text(
+                                            '批量改名',
+                                            style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.blue.shade300 : Colors.blue.shade800, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: () {
+                                          dataManager.batchDelete(holdings.first.clientName);
+                                          _showSnackBar('客户 ${holdings.first.clientName} 的所有持仓已删除');
+                                        },
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                                          child: Text(
+                                            '批量删除',
+                                            style: TextStyle(fontSize: 12, color: isDarkMode ? Colors.red.shade300 : Colors.red.shade800, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                            Row(
-                              children: [
-                                TextButton(
-                                  onPressed: () async {
-                                    final newName = await _showRenameDialog(context, holdings.first.clientName);
-                                    if (newName != null && newName.isNotEmpty) {
-                                      dataManager.batchRename(holdings.first.clientName, newName);
-                                      _showSnackBar('客户名批量修改成功');
-                                    }
-                                  },
-                                  child: const Text(
-                                    '批量改名',
-                                    style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                TextButton(
-                                  onPressed: () {
-                                    dataManager.batchDelete(holdings.first.clientName);
-                                    _showSnackBar('客户 ${holdings.first.clientName} 的所有持仓已删除');
-                                  },
-                                  child: const Text(
-                                    '批量删除',
-                                    style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Icon(
+                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                              color: isDarkMode ? Colors.white : Colors.black,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                     AnimatedSize(
@@ -185,15 +202,16 @@ class _ManageHoldingsPageState extends State<ManageHoldingsPage> {
                         duration: const Duration(milliseconds: 300),
                         child: Offstage(
                           offstage: !isExpanded,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ...holdings.map((holding) => Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 32.0, top: 4.0, right: 16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: holdings.map((holding) => Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4.0),
                                 child: HoldingCard(
                                   holding: holding,
-                                  showReportActions: false, // 隐藏报告和复制客户号按钮
-                                  showManagementActions: true, // 显示编辑和删除图标
+                                  showReportActions: false,
+                                  showManagementActions: true,
                                   onEdit: () {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
@@ -207,7 +225,7 @@ class _ManageHoldingsPageState extends State<ManageHoldingsPage> {
                                   },
                                 ),
                               )).toList(),
-                            ],
+                            ),
                           ),
                         ),
                       ),
