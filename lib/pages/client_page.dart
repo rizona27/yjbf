@@ -113,11 +113,8 @@ class _ExpandableClientCardState extends State<ExpandableClientCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final endColor = isDarkMode ? Colors.black : Colors.white;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
         children: [
           GestureDetector(
@@ -126,40 +123,40 @@ class _ExpandableClientCardState extends State<ExpandableClientCard> {
                 _isExpanded = !_isExpanded;
               });
             },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), // 统一垂直填充
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        colors: [
-                          _generateMorandiColor(widget.holdings.first.clientID),
-                          endColor,
-                        ],
-                        begin: Alignment.centerLeft, // 统一渐变方向
-                        end: Alignment.centerRight, // 统一渐变方向
-                      ),
-                    ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: _generateMorandiColor(widget.holdings.first.clientID), // 使用干净的纯色
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05), // 增加微妙的阴影
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
                     child: Text(
                       _getGroupTitle(widget.holdings.first.clientID, widget.holdings),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.w600, // 调整为更轻的字重
+                        color: Colors.black87, // 确保有好的对比度
                       ),
                     ),
                   ),
-                ),
-                Icon(
-                  _isExpanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
-                  color: Colors.blue.shade800,
-                ),
-              ],
+                  Icon(
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.blue.shade800,
+                  ),
+                ],
+              ),
             ),
           ),
           AnimatedSize(
@@ -171,13 +168,16 @@ class _ExpandableClientCardState extends State<ExpandableClientCard> {
               child: Offstage(
                 offstage: !_isExpanded,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 32.0, top: 4.0, right: 16.0),
+                  padding: const EdgeInsets.only(left: 16.0, top: 8.0, right: 16.0),
                   child: Column(
                     children: widget.holdings.map((holding) {
-                      return HoldingCard(
-                        holding: holding,
-                        showReportActions: true,
-                        showManagementActions: false,
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: HoldingCard(
+                          holding: holding,
+                          showReportActions: true,
+                          showManagementActions: false,
+                        ),
                       );
                     }).toList(),
                   ),
